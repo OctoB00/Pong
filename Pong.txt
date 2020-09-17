@@ -17,9 +17,9 @@ namespace BouncingBall
             shape.FillColor = Color.Red;
         }
 
-        public void AddForce(Vector2f force)
+        public void AddSpeed(Vector2f speed)
         {
-            velocity += force;
+            velocity += speed;
         }
         public void Update(float deltaTime)
         {
@@ -44,19 +44,46 @@ namespace BouncingBall
         {
             target.Draw(shape);
         }
-        public FloatRect GetBounds()
-        {
-            shape.GetGlobalBounds();
-        }
+        //public FloatRect GetBounds()
+        //{
+        //    shape.GetGlobalBounds();
+        //}
     }
     class Line
     {
-        public RectanlgeShape line;
+        public RectangleShape line;
         public Vector2f velocity;
 
         public Line()
         {
-            this.line = new RectanlgeShape(new Vector2f(100, 10));
+            this.line = new RectangleShape(new Vector2f(10, 100));
+            this.line.Origin = new Vector2f(5, 50);
+            line.FillColor = Color.White;
+        }
+
+        public void AddSpeed(Vector2f speed)
+        {
+            velocity += speed;
+            Console.WriteLine(speed);
+        }
+        public void Update(float deltaTime)
+        {
+            Vector2f newPosition = line.Position + velocity * deltaTime;
+            line.Position = newPosition;
+
+            if (newPosition.Y + line.Origin.Y > 599
+                || newPosition.Y - line.Origin.Y < 1)
+            {
+                velocity = new Vector2f(0, 0);
+            }
+            else
+            {
+                line.Position = newPosition;
+            }
+        }
+        public void Render(RenderTarget target)
+        {
+            target.Draw(line);
         }
     }
     class Program
@@ -68,8 +95,26 @@ namespace BouncingBall
                 window.Closed += (s, e) => window.Close();
                 Clock frameClock = new Clock();
                 Ball ball = new Ball();
-                ball.shape.Position = new Vector2f(100, 30);
-                ball.AddForce(new Vector2f(100, 200));
+                ball.shape.Position = new Vector2f(400, 300);
+                ball.AddSpeed(new Vector2f(100, 200));
+                Line line1 = new Line();
+                line1.line.Position = new Vector2f(50, 300);
+                bool keyPressed = false;
+                window.KeyPressed += (s, e) =>
+                {
+                    if (e.Code == Keyboard.Key.Up)
+                    {
+                        keyPressed = true;
+                    }
+                };
+                window.KeyReleased += (s, e) =>
+                {
+                    if (e.Code == Keyboard.Key.Up)
+                    {
+                        keyPressed = true;
+                    }
+                };
+                
 
                 while (window.IsOpen)
                 {
@@ -78,6 +123,17 @@ namespace BouncingBall
                     float deltaTime = frameClock.Restart().AsSeconds();
                     ball.Update(deltaTime);
                     ball.Render(window);
+                    line1.Update(deltaTime);
+                    line1.Render(window);
+                    if (keyPressed)
+                    {
+                        line1.AddSpeed(new Vector2f(0, -50));
+                    }
+                    else
+                    {
+                        line1.AddSpeed(new Vector2f(0, 0));
+                    }
+                    //sprite1.GetGlobalBounds().Intersects(sprite2.GetBounds())
 
                     window.Display();
                 }
