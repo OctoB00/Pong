@@ -44,10 +44,17 @@ namespace BouncingBall
         {
             target.Draw(shape);
         }
-        //public FloatRect GetBounds()
-        //{
-        //    shape.GetGlobalBounds();
-        //}
+        public bool Collision(Shape shape2)
+        {
+            if (shape.GetGlobalBounds().Intersects(shape2.GetGlobalBounds()))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
     class Line
     {
@@ -63,13 +70,11 @@ namespace BouncingBall
 
         public void AddSpeed(Vector2f speed)
         {
-            velocity += speed;
-            Console.WriteLine(speed);
+            velocity = speed;
         }
         public void Update(float deltaTime)
         {
             Vector2f newPosition = line.Position + velocity * deltaTime;
-            line.Position = newPosition;
 
             if (newPosition.Y + line.Origin.Y > 599
                 || newPosition.Y - line.Origin.Y < 1)
@@ -90,7 +95,7 @@ namespace BouncingBall
     {
         static void Main(string[] args)
         {
-            using (var window = new RenderWindow(new VideoMode(800, 600), "Bouncing Ball"))
+            using (var window = new RenderWindow(new VideoMode(800, 600), "Pong"))
             {
                 window.Closed += (s, e) => window.Close();
                 Clock frameClock = new Clock();
@@ -98,23 +103,49 @@ namespace BouncingBall
                 ball.shape.Position = new Vector2f(400, 300);
                 ball.AddSpeed(new Vector2f(100, 200));
                 Line line1 = new Line();
+                Line line2 = new Line();
                 line1.line.Position = new Vector2f(50, 300);
-                bool keyPressed = false;
+                line2.line.Position = new Vector2f(750, 300);
+                string pressedKey = "";
                 window.KeyPressed += (s, e) =>
                 {
                     if (e.Code == Keyboard.Key.Up)
                     {
-                        keyPressed = true;
+                        pressedKey = "Up";
+                    }
+                    else if (e.Code == Keyboard.Key.Down)
+                    {
+                        pressedKey = "Down";
+                    }
+                    else if (e.Code == Keyboard.Key.W)
+                    {
+                        pressedKey = "W";
+                    }
+                    else if (e.Code == Keyboard.Key.S)
+                    {
+                        pressedKey = "S";
                     }
                 };
                 window.KeyReleased += (s, e) =>
                 {
                     if (e.Code == Keyboard.Key.Up)
                     {
-                        keyPressed = true;
+                        pressedKey = "Nothing2";
+                    }
+                    else if (e.Code == Keyboard.Key.Down)
+                    {
+                        pressedKey = "Nothing2";
+                    }
+                    else if (e.Code == Keyboard.Key.W)
+                    {
+                        pressedKey = "Nothing1";
+                    }
+                    else if (e.Code == Keyboard.Key.S)
+                    {
+                        pressedKey = "Nothing1";
                     }
                 };
-                
+
 
                 while (window.IsOpen)
                 {
@@ -125,15 +156,25 @@ namespace BouncingBall
                     ball.Render(window);
                     line1.Update(deltaTime);
                     line1.Render(window);
-                    if (keyPressed)
+                    line2.Update(deltaTime);
+                    line2.Render(window);
+                    switch (pressedKey)
                     {
-                        line1.AddSpeed(new Vector2f(0, -50));
+                        case "Up": line2.AddSpeed(new Vector2f(0, -200)); break;
+                        case "Down": line2.AddSpeed(new Vector2f(0, 200)); break;
+                        case "W": line1.AddSpeed(new Vector2f(0, -200)); break;
+                        case "S": line1.AddSpeed(new Vector2f(0, 200)); break;
+                        case "Nothing1": line1.AddSpeed(new Vector2f(0, 0)); break;
+                        default: line2.AddSpeed(new Vector2f(0, 0)); break;
                     }
-                    else
+                    if (ball.Collision(line1.line))
                     {
-                        line1.AddSpeed(new Vector2f(0, 0));
+                        ball.velocity = new Vector2f(-ball.velocity.X, ball.velocity.Y);
                     }
-                    //sprite1.GetGlobalBounds().Intersects(sprite2.GetBounds())
+                    else if (ball.Collision(line2.line))
+                    {
+                        ball.velocity = new Vector2f(-ball.velocity.X, ball.velocity.Y);
+                    }
 
                     window.Display();
                 }
