@@ -9,13 +9,14 @@ namespace BouncingBall
     {
         public RectangleShape shape;
         public Vector2f velocity;
-        public float margin;
+        private float marginX;
 
         public Ball()
         {
-            this.shape = new RectangleShape(new Vector2f(20, 20));
-            this.shape.Origin = shape.Size / 2;
+            shape = new RectangleShape(new Vector2f(20, 20));
+            shape.Origin = shape.Size / 2;
             shape.FillColor = Color.White;
+            marginX = shape.Size.X;
         }
 
         public void AddSpeed(Vector2f speed)
@@ -26,15 +27,10 @@ namespace BouncingBall
         {
             Vector2f newPosition = shape.Position + velocity * deltaTime;
 
-            if (newPosition.Y + shape.Origin.Y > 600
+            if (newPosition.Y + shape.Origin.Y > Program.ScreenH
                 || newPosition.Y - shape.Origin.Y < 0)
             {
                 velocity = new Vector2f(velocity.X, -velocity.Y);
-            }
-            else if (newPosition.X - shape.Origin.X < 0
-                 || newPosition.X + shape.Origin.X > 800)
-            {
-                velocity = new Vector2f(-velocity.X, velocity.Y);
             }
             else
             {
@@ -45,9 +41,32 @@ namespace BouncingBall
         {
             window.Draw(shape);
         }
-        public bool Collision(Shape shape2)
+        public void Collision(RectangleShape shape2)
         {
-            if (shape.GetGlobalBounds().Intersects(shape2.GetGlobalBounds()))
+            if (shape.GetGlobalBounds().Intersects(shape2.GetGlobalBounds())) 
+            {
+                Vector2f newPos = shape.Position;
+
+                if (velocity.X < 0)
+                {
+                    newPos.X = shape2.Position.X + shape2.Size.X / 2 + marginX;
+                }
+                if (velocity.X > 0)
+                {
+                    newPos.X = shape2.Position.X - shape2.Size.X / 2 - marginX;
+                }
+                velocity.X = velocity.X * -1;
+
+                shape.Position = newPos;
+            }
+        }
+        public bool IsOutside()
+        {
+            if (shape.Position.X - marginX > Program.ScreenW)
+            {
+                return true;
+            }
+            else if (shape.Position.X + marginX < 0)
             {
                 return true;
             }
@@ -55,6 +74,11 @@ namespace BouncingBall
             {
                 return false;
             }
+        }
+        public void Reset()
+        {
+            shape.Position = new Vector2f(Program.ScreenW / 2, Program.ScreenH / 2);
+            velocity.X = -velocity.X;
         }
     }
     class Line
@@ -92,6 +116,47 @@ namespace BouncingBall
             window.Draw(line);
         }
     }
+    class Score
+    {
+        private Text leftShape;
+        private Text rightShape;
+        private int leftScore;
+        private int rightScore;
+        private const int FontSize = 18;
+        private const int Margin = 20;
+
+        public Score(Font font)
+        {
+            leftShape = new Text("", font, FontSize);
+            rightShape = new Text("", font, FontSize);
+            UpdateText();
+        }
+        public void ScoreLeft()
+        {
+            leftScore++;
+            UpdateText();
+        }
+        public void ScoreRight()
+        {
+            rightScore++;
+            UpdateText();
+        }
+        public void UpdateText()
+        {
+            leftShape.DisplayedString = $"Score: {leftScore}";
+            leftShape.Position = new Vector2f(Margin, Margin);
+            leftShape.Origin = new Vector2f(0, 0);
+
+            rightShape.DisplayedString = $"Score: {rightScore}";
+            rightShape.Position = new Vector2f(Program.ScreenW - Margin, Margin);
+            rightShape.Origin = new Vector2f(rightShape.GetLocalBounds().Width, 0);
+        }
+        public void Render(RenderWindow w)
+        {
+            w.Draw(leftShape);
+            w.Draw(rightShape);
+        }
+    }
     class Program
     {
         public const int ScreenW = 800;
@@ -103,6 +168,7 @@ namespace BouncingBall
                 window.Closed += (s, e) => window.Close();
                 Clock frameClock = new Clock();
                 Ball ball = new Ball();
+                Score score = new Score(new Font("Minecraftia-Regular.ttf"));
                 ball.shape.Position = new Vector2f(ScreenW / 2, ScreenH / 2);
                 ball.AddSpeed(new Vector2f(100, 200));
                 Line line1 = new Line();
@@ -170,14 +236,22 @@ namespace BouncingBall
                         case "Nothing1": line1.Move(new Vector2f(0, 0)); break;
                         default: line2.Move(new Vector2f(0, 0)); break;
                     }
-                    if (ball.Collision(line1.line))
+                    ball.Collision(line1.line);
+                    ball.Collision(line2.line);
+                    if (ball.IsOutside())
                     {
-                        ball.velocity = new Vector2f(-ball.velocity.X, ball.velocity.Y);
+                        if (ball.shape.Position.X > ScreenW / 2)
+                        {
+                            score.ScoreLeft();
+                        }
+                        else
+                        {
+                            score.ScoreRight();
+                        }
+                        ball.Reset();
                     }
-                    else if (ball.Collision(line2.line))
-                    {
-                        ball.velocity = new Vector2f(-ball.velocity.X, ball.velocity.Y);
-                    }
+                    score.Render(window);
+
 
                     window.Display();
                 }
