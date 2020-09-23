@@ -5,10 +5,10 @@ using SFML.Graphics;
 
 namespace BouncingBall
 {
-    class Ball
+class Ball
     {
         public RectangleShape shape;
-        public Vector2f velocity;
+        private Vector2f velocity;
         private float marginX;
 
         public Ball()
@@ -19,9 +19,24 @@ namespace BouncingBall
             marginX = shape.Size.X;
         }
 
-        public void AddSpeed(Vector2f speed)
+        public void Move(Vector2f speed)
         {
             velocity += speed;
+        }
+        public void AddSpeed()
+        {
+            if (velocity.X > 0)
+            {
+                velocity += new Vector2f(10, 10);
+            }
+            else
+            {
+                velocity += new Vector2f(-10, 10);
+            }
+        }
+        public void ResetSpeed(Vector2f speed)
+        {
+            velocity = speed;
         }
         public void Update(float deltaTime)
         {
@@ -43,7 +58,7 @@ namespace BouncingBall
         }
         public void Collision(RectangleShape shape2)
         {
-            if (shape.GetGlobalBounds().Intersects(shape2.GetGlobalBounds())) 
+            if (shape.GetGlobalBounds().Intersects(shape2.GetGlobalBounds()))
             {
                 Vector2f newPos = shape.Position;
 
@@ -84,7 +99,7 @@ namespace BouncingBall
     class Line
     {
         public RectangleShape line;
-        public Vector2f velocity;
+        private Vector2f velocity;
 
         public Line()
         {
@@ -167,10 +182,11 @@ namespace BouncingBall
             {
                 window.Closed += (s, e) => window.Close();
                 Clock frameClock = new Clock();
+                Clock ballTimer = new Clock();
                 Ball ball = new Ball();
                 Score score = new Score(new Font("Minecraftia-Regular.ttf"));
                 ball.shape.Position = new Vector2f(ScreenW / 2, ScreenH / 2);
-                ball.AddSpeed(new Vector2f(100, 200));
+                ball.Move(new Vector2f(100, 200));
                 Line line1 = new Line();
                 Line line2 = new Line();
                 line1.line.Position = new Vector2f(50, 300);
@@ -243,14 +259,22 @@ namespace BouncingBall
                         if (ball.shape.Position.X > ScreenW / 2)
                         {
                             score.ScoreLeft();
+                            ball.ResetSpeed(new Vector2f(-100, 200));
                         }
                         else
                         {
                             score.ScoreRight();
+                            ball.ResetSpeed(new Vector2f(100, 200));
                         }
                         ball.Reset();
                     }
                     score.Render(window);
+                    float time = ballTimer.ElapsedTime.AsSeconds();
+                    if (time >= 1f)
+                    {
+                        ball.AddSpeed();
+                        ballTimer.Restart();
+                    }
 
 
                     window.Display();
